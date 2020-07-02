@@ -2,6 +2,7 @@ import React, {useContext, useState, useEffect, useRef} from 'react';
 import Realm from 'realm';
 import {useAuth} from './AuthProvider';
 import {Task, Category} from './schemas';
+import {useUsers} from './OfflineProvider';
 
 // Create the context that will be provided to descendants of TasksProvider via
 // the useTasks hook.
@@ -9,6 +10,7 @@ const TasksContext = React.createContext(null);
 const TasksProvider = ({children, projectId}) => {
   // Get the user from the AuthProvider context.
   const {user} = useAuth();
+  const {userData} = useUsers();
 
   // The tasks list will contain the tasks in the realm when opened.
   const [tasks, setTasks] = useState([]);
@@ -108,6 +110,7 @@ const TasksProvider = ({children, projectId}) => {
         'Task',
 
         new Task({
+          assignee: userData[Math.round(Math.random() * 3)]._id || null,
           name: newTaskName || 'New Task',
           partition: projectId,
           category: category

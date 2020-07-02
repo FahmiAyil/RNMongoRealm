@@ -5,6 +5,7 @@ class Task {
     name,
     partition,
     category,
+    assignee,
     status = Task.STATUS_OPEN,
     id = new ObjectId(),
   }) {
@@ -13,6 +14,7 @@ class Task {
     this.name = name;
     this.status = status;
     this.category = category;
+    this.assignee = assignee;
   }
 
   static STATUS_OPEN = 'Open';
@@ -27,6 +29,7 @@ class Task {
       name: 'string',
       category: 'Category',
       status: 'string',
+      assignee: 'objectId?',
     },
     primaryKey: '_id',
   };

@@ -5,6 +5,7 @@ import {useAuth} from './AuthProvider';
 import {LogInView} from './LogInView';
 import {AuthProvider} from './AuthProvider';
 import {TasksProvider} from './TasksProvider';
+import {OfflineProvider} from './OfflineProvider';
 import {TasksView} from './TasksView';
 
 const App = () => {
@@ -28,9 +29,11 @@ function AppBody() {
           {user == null ? (
             <LogInView />
           ) : (
-            <TasksProvider projectId="My Project">
-              <TasksView />
-            </TasksProvider>
+            <OfflineProvider projectId="My Project">
+              <TasksProvider projectId="My Project">
+                <TasksView />
+              </TasksProvider>
+            </OfflineProvider>
           )}
         </View>
       </SafeAreaView>
