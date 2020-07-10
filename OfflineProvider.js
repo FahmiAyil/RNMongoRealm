@@ -2,6 +2,7 @@ import React, {useContext, useState, useEffect, useRef} from 'react';
 import Realm from 'realm';
 import {useAuth} from './AuthProvider';
 import {User} from './offlineSchemas';
+import {Task, Category} from './schemas';
 
 // Create the context that will be provided to descendants of OfflineProvider via
 // the useUsers hook.
@@ -32,7 +33,7 @@ const OfflineProvider = ({children, projectId}) => {
     // partition value. This will open a realm that contains all objects where
     // object._partition == projectId.
     const config = {
-      schema: [User.schema],
+      schema: [User.schema, Task.schema, Category.schema],
     };
 
     console.log(
@@ -137,12 +138,51 @@ const OfflineProvider = ({children, projectId}) => {
     return currentUser ? currentUser.name : null;
   };
 
+  const writeTaskLocally = async (bulkData, changes, cb) => {
+    let realm = realmRef.current;
+    let rejecedData = [];
+    let oldData = realm.objects('Task');
+    await realm.write(() => {
+      // Create a new task in the same partition -- that is, in the same project.
+      if (changes.modifications.length > 0) {
+        console.log('modification !!!!');
+        changes.modifications.forEach(index => {
+          if (bulkData[index].status === 'Complete') {
+            console.log(oldData[index].status, '<><><><><>><>><><>');
+            cb(oldData[index]);
+          } else {
+            realm.create('Task', bulkData[index], true);
+          }
+        });
+      }
+      if (changes.insertions.length > 0) {
+        console.log('insert!!!');
+        changes.insertions.forEach(index => {
+          realm.create('Task', bulkData[index], true);
+        });
+      }
+    });
+
+    if (rejecedData.length > 0) {
+      return rejecedData;
+    } else {
+      return false;
+    }
+  };
+
+  const getTaskLocal = () => {
+    let realm = realmRef.current;
+    console.log(realm.objects('Task'), '>>>><<<<<');
+  };
+
   return (
     <OfflineContext.Provider
       value={{
         projectId,
         userData,
         getUserName,
+        writeTaskLocally,
+        getTaskLocal,
       }}>
       {children}
     </OfflineContext.Provider>

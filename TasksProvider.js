@@ -10,7 +10,7 @@ const TasksContext = React.createContext(null);
 const TasksProvider = ({children, projectId}) => {
   // Get the user from the AuthProvider context.
   const {user} = useAuth();
-  const {userData} = useUsers();
+  const {userData, writeTaskLocally, getTaskLocal} = useUsers();
 
   // The tasks list will contain the tasks in the realm when opened.
   const [tasks, setTasks] = useState([]);
@@ -70,11 +70,20 @@ const TasksProvider = ({children, projectId}) => {
         // task._partition == projectId.
         const syncTasks = openedRealm.objects('Task');
 
-        // Watch for changes to the tasks collection.
-        openedRealm.addListener('change', () => {
-          // On change, update the tasks state variable and re-render.
-          setTasks([...syncTasks]);
+        //Objective listen
+        syncTasks.addListener(async (obj, changes) => {
+          await setTasks([...syncTasks]);
+          await writeTaskLocally(Array.from([...obj]), changes, data =>
+            rewriteTask(data),
+          );
+          await getTaskLocal();
         });
+
+        // Watch for changes to the tasks collection.
+        // openedRealm.addListener('change', () => {
+        //   // On change, update the tasks state variable and re-render.
+        //   setTasks([...syncTasks]);
+        // });
 
         // Set the tasks state variable and re-render.
         setTasks([...syncTasks]);
@@ -95,6 +104,7 @@ const TasksProvider = ({children, projectId}) => {
         realmRef.current = null;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, projectId]); // Declare dependencies list in the second parameter to useEffect().
   // Define our create, update, and delete functions that users of the
   // useTasks() hook can call.
@@ -183,6 +193,15 @@ const TasksProvider = ({children, projectId}) => {
   // Render the children within the TaskContext's provider. The value contains
   // everything that should be made available to descendants that use the
   // useTasks hook.
+
+  const rewriteTask = async data => {
+    const realm = realmRef.current;
+    await realm.write(() => {
+      // Create a new task in the same partition -- that is, in the same project.
+      realm.create('Task', data, true);
+    });
+  };
+
   return (
     <TasksContext.Provider
       value={{
@@ -198,6 +217,7 @@ const TasksProvider = ({children, projectId}) => {
         projectId,
         generateCategory,
         getCategory,
+        rewriteTask,
       }}>
       {children}
     </TasksContext.Provider>
